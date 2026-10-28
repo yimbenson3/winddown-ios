@@ -1,0 +1,104 @@
+# XcodeGen spec — run `xcodegen generate` in this folder to create WindDown.xcodeproj
+# Docs: https://github.com/yonaskolb/XcodeGen
+
+name: WindDown
+
+options:
+  bundleIdPrefix: com.yimbenson3   # change to your own reverse-domain prefix
+  deploymentTarget:
+    iOS: "26.0"                     # AlarmKit requires iOS 26+
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"            # Swift 6 strict concurrency can come later
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""            # paste your Apple Team ID here (Xcode > Settings > Accounts)
+    CODE_SIGN_STYLE: Automatic
+
+targets:
+
+  # Main iOS app
+  WindDown:
+    type: application
+    platform: iOS
+    sources:
+      - path: WindDown
+      - path: Shared
+    info:
+      path: WindDown/Info.plist
+      properties:
+        CFBundleDisplayName: WindDown
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSAlarmKitUsageDescription: "WindDown uses alarms to remind you when it's time to put your phone down and relax."
+        NSSupportsLiveActivities: true
+    entitlements:
+      path: WindDown/WindDown.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups: [group.com.yimbenson3.winddown]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.yimbenson3.winddown
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    dependencies:
+      - target: WindDownMonitor
+      - target: WindDownShield
+
+  # Screen Time: runs your code when the wind-down window starts and ends
+  WindDownMonitor:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Extensions/WindDownMonitor
+      - path: Shared
+    info:
+      path: Extensions/WindDownMonitor/Info.plist
+      properties:
+        CFBundleDisplayName: WindDown Monitor
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.deviceactivity.monitor-extension
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).WindDownMonitorExtension
+    entitlements:
+      path: Extensions/WindDownMonitor/WindDownMonitor.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups: [group.com.yimbenson3.winddown]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.yimbenson3.winddown.monitor
+
+  # Screen Time: the custom screen shown over blocked apps
+  WindDownShield:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Extensions/WindDownShield
+    info:
+      path: Extensions/WindDownShield/Info.plist
+      properties:
+        CFBundleDisplayName: WindDown Shield
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.ManagedSettingsUI.shield-configuration-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).WindDownShieldConfiguration
+    entitlements:
+      path: Extensions/WindDownShield/WindDownShield.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups: [group.com.yimbenson3.winddown]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.yimbenson3.winddown.shield
+
+schemes:
+  WindDown:
+    build:
+      targets:
+        WindDown: all
+    run:
+      config: Debug
+    archive:
+      config: Release
